@@ -39,21 +39,9 @@ htmlcov:
 	open /tmp/htmlcov/index.html
 
 doccheck:
-	##### DOC8 ######
-	# Correct rst formatting for documentation
-	#
-	# TODO: Remove doc8
-	##
-	doc8 docs/source --ignore-path docs/source/topics/multifile.rst
-	#
-	#
-	# Verify we have no broken external links
-	# as well as no undefined internal references.
-	$(MAKE) -C docs linkcheck
-	# Verify we can build the docs.  The
-	# treat warnings as errors flag is enabled
-	# so any sphinx-build warnings will fail the build.
-	$(MAKE) -C docs html
+	##### DOCS #####
+	# Verify the Zensical documentation site builds successfully.
+	zensical build
 
 prcheck: check pylint coverage doccheck typecheck
 

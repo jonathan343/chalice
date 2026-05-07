@@ -1,0 +1,94 @@
+[project]
+site_name = "AWS Chalice"
+site_description = "Python Serverless Microframework for AWS"
+site_author = "AWS"
+site_url = "https://aws.github.io/chalice/"
+repo_name = "aws/chalice"
+repo_url = "https://github.com/aws/chalice"
+docs_dir = "docs/source"
+site_dir = "docs/build/html"
+
+nav = [
+  { "Documentation" = "index.md" },
+  { "Quickstart" = "quickstart.md" },
+  { "Tutorials" = [
+    "tutorials/index.md",
+    "tutorials/basicrestapi.md",
+    "tutorials/customdomain.md",
+    "tutorials/wsecho.md",
+    "tutorials/wschat.md",
+    "tutorials/events.md",
+    "tutorials/cdk.md",
+  ] },
+  { "Topics" = [
+    "topics/index.md",
+    "topics/routing.md",
+    "topics/views.md",
+    "topics/configfile.md",
+    "topics/multifile.md",
+    "topics/logging.md",
+    "topics/sdks.md",
+    "topics/stages.md",
+    "topics/packaging.md",
+    "topics/pyversion.md",
+    "topics/cfn.md",
+    "topics/tf.md",
+    "topics/authorizers.md",
+    "topics/events.md",
+    "topics/purelambda.md",
+    "topics/blueprints.md",
+    "topics/websockets.md",
+    "topics/cd.md",
+    "topics/domainname.md",
+    "topics/experimental.md",
+    "topics/testing.md",
+    "topics/middleware.md",
+  ] },
+  { "API Reference" = "api.md" },
+  { "Sample Apps" = [
+    "samples/index.md",
+    "samples/todo-app/index.md",
+    "samples/media-query/index.md",
+  ] },
+  { "Upgrade Notes" = "upgrading.md" },
+  { "Changelog" = "changelog.md" },
+  { "FAQ" = "faq.md" },
+]
+
+copyright = "Copyright &copy; 2026 Amazon Web Services, Inc. or its affiliates. All rights reserved."
+
+[project.theme]
+name = "catppuccin"
+language = "en"
+features = [
+  "content.code.copy",
+  "content.code.select",
+  "navigation.footer",
+  "navigation.indexes",
+  "navigation.sections",
+  "navigation.tabs",
+  "navigation.top",
+  "navigation.tracking",
+  "search.highlight",
+]
+logo = "img/chalice-logo-icon-whitespace.png"
+
+[[project.theme.palette]]
+scheme = "catppuccin-frappe"
+primary = "custom"
+accent = "custom"
+
+[project.markdown_extensions.admonition]
+[project.markdown_extensions.attr_list]
+[project.markdown_extensions.def_list]
+[project.markdown_extensions.md_in_html]
+[project.markdown_extensions.toc]
+permalink = true
+[project.markdown_extensions.pymdownx.highlight]
+anchor_linenums = true
+line_spans = "__span"
+pygments_lang_class = true
+[project.markdown_extensions.pymdownx.inlinehilite]
+[project.markdown_extensions.pymdownx.superfences]
+[project.markdown_extensions.pymdownx.snippets]
+check_paths = true

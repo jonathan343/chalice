@@ -111,6 +111,7 @@ def test_can_load_project_config_after_project_creation(runner):
         assert config == {
             'version': '2.0',
             'app_name': 'testproject',
+            'vendor_symlink_policy': 'inside-vendor',
             'stages': {
                 'dev': {'api_gateway_stage': DEFAULT_APIGATEWAY_STAGE_NAME},
             }

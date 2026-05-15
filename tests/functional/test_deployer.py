@@ -16,6 +16,7 @@ from chalice import Chalice
 from chalice.deploy.packager import MissingDependencyError
 from chalice.deploy.packager import EmptyPackageError
 from chalice.deploy.packager import LambdaDeploymentPackager
+from chalice.deploy.packager import VendorSymlinkError
 from chalice.deploy.packager import DependencyBuilder
 from chalice.deploy.packager import Package
 
@@ -369,6 +370,72 @@ def test_zip_filename_changes_on_vendor_symlink(tmpdir, chalice_deployer):
     second = chalice_deployer.deployment_package_filename(
         str(appdir), 'python3.6')
     assert first != second
+
+
+def test_strict_vendor_symlink_policy_rejects_external_target(
+        tmpdir, chalice_deployer):
+    appdir = _create_app_structure(tmpdir)
+    outside = tmpdir.mkdir('outside')
+    outside.join('secret.txt').write('secret')
+    vendor = appdir.mkdir('vendor')
+    os.symlink(str(outside), str(vendor.join('escape')))
+    chalice_deployer.vendor_symlink_policy = 'inside-vendor'
+
+    with pytest.raises(VendorSymlinkError) as excinfo:
+        chalice_deployer.create_deployment_package(str(appdir), 'python3.11')
+
+    message = str(excinfo.value)
+    assert 'vendor/escape' in message
+    assert 'vendor_symlink_policy' in message
+    assert 'follow' in message
+
+
+def test_strict_vendor_symlink_policy_rejects_external_file(
+        tmpdir, chalice_deployer):
+    appdir = _create_app_structure(tmpdir)
+    outside = tmpdir.mkdir('outside')
+    secret_file = outside.join('secret.txt')
+    secret_file.write('secret')
+    vendor = appdir.mkdir('vendor')
+    os.symlink(str(secret_file), str(vendor.join('secret.txt')))
+    chalice_deployer.vendor_symlink_policy = 'inside-vendor'
+
+    with pytest.raises(VendorSymlinkError) as excinfo:
+        chalice_deployer.create_deployment_package(str(appdir), 'python3.11')
+
+    assert 'vendor/secret.txt' in str(excinfo.value)
+
+
+def test_strict_vendor_symlink_policy_allows_internal_target(
+        tmpdir, chalice_deployer):
+    appdir = _create_app_structure(tmpdir)
+    vendor = appdir.mkdir('vendor')
+    real_package = vendor.mkdir('realpackage')
+    real_package.join('__init__.py').write('# Test package')
+    os.symlink(str(real_package), str(vendor.join('linkedpackage')))
+    chalice_deployer.vendor_symlink_policy = 'inside-vendor'
+
+    name = chalice_deployer.create_deployment_package(
+        str(appdir), 'python3.11')
+
+    with zipfile.ZipFile(name) as f:
+        _assert_in_zip(
+            'linkedpackage/__init__.py', b'# Test package', f)
+
+
+def test_layer_strict_vendor_symlink_policy_rejects_external_target(
+        tmpdir, layer_packager):
+    packager, _ = layer_packager
+    appdir = _create_app_structure(tmpdir)
+    appdir.join('requirements.txt').write('')
+    outside = tmpdir.mkdir('outside')
+    outside.join('secret.txt').write('secret')
+    vendor = appdir.mkdir('vendor')
+    os.symlink(str(outside), str(vendor.join('escape')))
+    packager.vendor_symlink_policy = 'inside-vendor'
+
+    with pytest.raises(VendorSymlinkError):
+        packager.create_deployment_package(str(appdir), 'python3.11')
 
 
 @slow

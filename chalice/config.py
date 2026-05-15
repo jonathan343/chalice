@@ -227,6 +227,14 @@ class Config(object):
     def config_file_version(self) -> str:
         return self._config_from_disk.get('version', '1.0')
 
+    @property
+    def vendor_symlink_policy(self) -> str:
+        value = self._chain_lookup('vendor_symlink_policy',
+                                   varies_per_chalice_stage=True)
+        if value is None:
+            return 'follow'
+        return value
+
     # These are all config values that can vary per
     # chalice stage.
 

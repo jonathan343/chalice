@@ -1,6 +1,7 @@
 {
   "version": "2.0",
   "app_name": "{{app_name}}",
+  "vendor_symlink_policy": "inside-vendor",
   "stages": {
     "dev": {
       "api_gateway_stage": "api",

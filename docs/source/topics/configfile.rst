@@ -170,6 +170,25 @@ vendored libraries.  Boolean value defaults to ``false`` if not specified.  See
 :ref:`package-3rd-party` for more information.
 
 
+``vendor_symlink_policy``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Controls how Chalice handles directory symlinks inside the ``vendor/``
+directory when creating deployment packages or automatic layer packages. Valid
+values are:
+
+- ``follow``: Preserve legacy behavior and follow symlinked directories even if
+  they resolve outside ``vendor/``. This is the default when the option is not
+  specified, which preserves compatibility with existing projects.
+- ``inside-vendor``: Follow symlinked directories only when their resolved path
+  remains inside the real ``vendor/`` directory. Newly generated Chalice
+  projects include this setting by default. Set this value to ``follow`` if you
+  need the legacy behavior for a project that intentionally links to shared
+  dependencies outside ``vendor/``.
+
+This value can be provided per stage.
+
+
 .. _custom-domain-config-options:
 
 ``api_gateway_custom_domain``

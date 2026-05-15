@@ -1,0 +1,5 @@
+{
+  "type": "bugfix",
+  "category": "Packaging",
+  "description": "Add a vendor_symlink_policy config option so new projects reject vendor symlinks that resolve outside the vendor directory while existing projects preserve legacy symlink behavior."
+}

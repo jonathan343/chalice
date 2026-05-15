@@ -43,6 +43,29 @@ def test_version_defaults_to_1_when_missing():
     assert c.config_file_version == '1.0'
 
 
+def test_vendor_symlink_policy_defaults_to_follow():
+    c = Config()
+    assert c.vendor_symlink_policy == 'follow'
+
+
+def test_can_configure_vendor_symlink_policy():
+    c = Config(config_from_disk={'vendor_symlink_policy': 'inside-vendor'})
+    assert c.vendor_symlink_policy == 'inside-vendor'
+
+
+def test_vendor_symlink_policy_varies_by_stage():
+    c = Config(
+        chalice_stage='prod',
+        config_from_disk={
+            'vendor_symlink_policy': 'follow',
+            'stages': {
+                'prod': {'vendor_symlink_policy': 'inside-vendor'},
+            },
+        },
+    )
+    assert c.vendor_symlink_policy == 'inside-vendor'
+
+
 def test_default_value_of_manage_iam_role():
     c = Config.create()
     assert c.manage_iam_role

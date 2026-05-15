@@ -1,6 +1,7 @@
 # pylint: disable=too-many-lines
 from __future__ import annotations
 import sys
+import os
 import hashlib
 import inspect
 import re
@@ -62,6 +63,10 @@ class EmptyPackageError(Exception):
     """A deployment package cannot be an empty zip file."""
 
 
+class VendorSymlinkError(Exception):
+    """A vendor symlink points outside the allowed package directory."""
+
+
 class UnsupportedPackageError(Exception):
     """Unable to parse package metadata."""
 
@@ -82,13 +87,38 @@ class BaseLambdaDeploymentPackager(object):
         'python3.13': 'cp313',
         'python3.14': 'cp314',
     }
+    _VENDOR_SYMLINK_FOLLOW = 'follow'
+    _VENDOR_SYMLINK_INSIDE_VENDOR = 'inside-vendor'
+    _VALID_VENDOR_SYMLINK_POLICIES = (
+        _VENDOR_SYMLINK_FOLLOW,
+        _VENDOR_SYMLINK_INSIDE_VENDOR,
+    )
 
     def __init__(
-        self, osutils: OSUtils, dependency_builder: DependencyBuilder, ui: UI
+        self,
+        osutils: OSUtils,
+        dependency_builder: DependencyBuilder,
+        ui: UI,
+        vendor_symlink_policy: str = _VENDOR_SYMLINK_FOLLOW,
     ) -> None:
         self._osutils = osutils
         self._dependency_builder = dependency_builder
         self._ui = ui
+        self.vendor_symlink_policy = vendor_symlink_policy
+
+    @property
+    def vendor_symlink_policy(self) -> str:
+        return self._vendor_symlink_policy
+
+    @vendor_symlink_policy.setter
+    def vendor_symlink_policy(self, value: str) -> None:
+        if value not in self._VALID_VENDOR_SYMLINK_POLICIES:
+            raise ValueError(
+                "vendor_symlink_policy must be one of: %s" % (
+                    ', '.join(self._VALID_VENDOR_SYMLINK_POLICIES),
+                )
+            )
+        self._vendor_symlink_policy = value
 
     def create_deployment_package(
         self, project_dir: str, python_version: str
@@ -105,15 +135,49 @@ class BaseLambdaDeploymentPackager(object):
         if not self._osutils.directory_exists(dirname):
             return
         prefix_len = len(dirname) + 1
-        for root, _, filenames in self._osutils.walk(
+        for root, dirnames, filenames in self._osutils.walk(
             dirname, followlinks=True
         ):
+            self._validate_vendor_symlink_dirnames(dirname, root, dirnames)
             for filename in filenames:
                 full_path = self._osutils.joinpath(root, filename)
+                self._validate_vendor_path(dirname, full_path)
                 zip_path = full_path[prefix_len:]
                 if prefix:
                     zip_path = self._osutils.joinpath(prefix, zip_path)
                 zipped.write(full_path, zip_path)
+
+    def _validate_vendor_symlink_dirnames(
+        self, vendor_dir: str, root: str, dirnames: List[str]
+    ) -> None:
+        if self.vendor_symlink_policy != self._VENDOR_SYMLINK_INSIDE_VENDOR:
+            return
+        for dirname in dirnames:
+            full_path = self._osutils.joinpath(root, dirname)
+            self._validate_vendor_path(vendor_dir, full_path)
+
+    def _validate_vendor_path(self, vendor_dir: str, path: str) -> None:
+        if self.vendor_symlink_policy != self._VENDOR_SYMLINK_INSIDE_VENDOR:
+            return
+        real_vendor_dir = os.path.normcase(os.path.realpath(vendor_dir))
+        real_path = os.path.normcase(os.path.realpath(path))
+        try:
+            common_path = os.path.commonpath([real_vendor_dir, real_path])
+        except ValueError:
+            common_path = None
+        if common_path != real_vendor_dir:
+            raise VendorSymlinkError(
+                "Vendor path %s resolves outside the vendor directory: %s. "
+                "Move the target under vendor/ or set "
+                "vendor_symlink_policy to 'follow' to preserve legacy "
+                "symlink behavior." % (
+                    self._display_vendor_path(vendor_dir, path), real_path
+                )
+            )
+
+    def _display_vendor_path(self, vendor_dir: str, path: str) -> str:
+        vendor_parent = self._osutils.dirname(vendor_dir)
+        return os.path.relpath(path, vendor_parent)
 
     def deployment_package_filename(
         self, project_dir: str, python_version: str
@@ -201,11 +265,15 @@ class BaseLambdaDeploymentPackager(object):
         return h.hexdigest()
 
     def _hash_vendor_dir(self, vendor_dir: str, md5: Any) -> None:
-        for rootdir, _, filenames in self._osutils.walk(
+        for rootdir, dirnames, filenames in self._osutils.walk(
             vendor_dir, followlinks=True
         ):
+            self._validate_vendor_symlink_dirnames(
+                vendor_dir, rootdir, dirnames
+            )
             for filename in filenames:
                 fullpath = self._osutils.joinpath(rootdir, filename)
+                self._validate_vendor_path(vendor_dir, fullpath)
                 with self._osutils.open(fullpath, 'rb') as f:
                     # Not actually an issue, but pylint will complain
                     # about the f var being used in the lambda function

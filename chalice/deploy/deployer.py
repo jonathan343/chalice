@@ -301,11 +301,13 @@ def create_build_stage(osutils, ui, swagger_gen, config):
                 osutils=osutils,
                 dependency_builder=dependency_builder,
                 ui=ui,
+                vendor_symlink_policy=config.vendor_symlink_policy,
             ),
             layer_packager=LayerDeploymentPackager(
                 osutils=osutils,
                 dependency_builder=dependency_builder,
                 ui=ui,
+                vendor_symlink_policy=config.vendor_symlink_policy,
             )
         )
     else:
@@ -314,6 +316,7 @@ def create_build_stage(osutils, ui, swagger_gen, config):
                 osutils=osutils,
                 dependency_builder=dependency_builder,
                 ui=ui,
+                vendor_symlink_policy=config.vendor_symlink_policy,
             )
         )
     build_stage = BuildStage(
